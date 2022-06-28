@@ -16,29 +16,33 @@ const parseAttributes = str => {
 
     let value = '', key = '', strOpen = false, q = '';
 
+    const reset = () => {
+        key = '';
+        value = '';
+    };
+
+    const setAttr = (key, value) => {
+        attributes[key] = value;
+        reset();
+    };
+
     while(i < chars.length) {
         const curr = chars[i];
 
-        if((curr === ' ' || curr === '\n') && !strOpen) {
+        if((curr === ' ' || curr === '\n') && !strOpen ) {
             if(key) {
-                attributes[key] = value;
-                key = '';
-                value = '';
+                setAttr(key, value);
             }
         } else if(curr === '"' || curr === "'") {
             if(strOpen) {
                 if(q === curr) {
                     strOpen = false;
+
                     if(key) {
-                        attributes[key] = value;
-                        key = '';
-                        value = '';
+                        setAttr(key, value);
                         q = '';
                     }
-                } else {
-                    value += curr;
                 }
-                
             } else {
                 q = curr;
                 strOpen = true;
@@ -51,6 +55,15 @@ const parseAttributes = str => {
         }
 
         i++;
+    }
+
+    if(value || key) {
+        if(!key && value) {
+            key = value;
+            value = undefined;
+        }
+
+        setAttr(key, value);
     }
 
     return attributes;
@@ -71,6 +84,8 @@ export function parseHTML(html) {
 
     let tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', strOpen = false;
 
+    let tagStrOpen = '';
+
     while(i < chars.length) {
         const curr = chars[i];
 
@@ -80,12 +95,11 @@ export function parseHTML(html) {
             if(strOpen) {
                 if(q === curr) {
                     strOpen = false;
-                } else {
-                    attributeString += curr;
                 }
             } else {
                 q = curr;
                 strOpen = true;
+                tagStrOpen = tagName;
             }
         } else if(hasAttributes && strOpen) {
             attributeString += curr;
@@ -154,6 +168,10 @@ export function parseHTML(html) {
         }
 
         i++;
+    }
+
+    if(strOpen) {
+        throw new Error(`Attribute quote open in <${tagStrOpen}> tag.`);
     }
 
     return ROOT;
