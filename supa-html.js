@@ -69,12 +69,27 @@ export function parseHTML(html) {
 
     let isClosingTag = false;
 
-    let tagNameOpen = false, hasAttributes = false, tagOpen = true;
+    let tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', strOpen = false;
 
     while(i < chars.length) {
         const curr = chars[i];
 
-        if(curr === '<') {
+        if(hasAttributes && (curr === '"' || curr === "'")) {
+            attributeString += curr;
+
+            if(strOpen) {
+                if(q === curr) {
+                    strOpen = false;
+                } else {
+                    attributeString += curr;
+                }
+            } else {
+                q = curr;
+                strOpen = true;
+            }
+        } else if(hasAttributes && strOpen) {
+            attributeString += curr;
+        } else if(curr === '<') {
             if(chars[i + 1] === '/') {
                 isClosingTag = true;
                 i++;
