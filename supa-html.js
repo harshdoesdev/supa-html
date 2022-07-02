@@ -199,8 +199,6 @@ export function parseHTML(html) {
                             parseAttributes(attributeString),
                             isSvg || parent.isSvg
                         );
-
-                    console.log(attributeString)
     
                     parent.children.push(createdTag);
     
