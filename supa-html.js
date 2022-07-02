@@ -80,6 +80,8 @@ const parseAttributes = str => {
                         setAttr(key, value);
                         q = '';
                     }
+                } else {
+                    value += curr;
                 }
             } else {
                 q = curr;
@@ -225,10 +227,8 @@ export function parseHTML(html) {
             }
         } else if(tagNameOpen) {
             if(!hasAttributes) {
-                if(curr === ' ') {
+                if(isWhiteSpace(curr)) {
                     hasAttributes = true;
-                } else if(curr === '\n') {
-                    
                 } else {
                     tagName += curr;
                 }
