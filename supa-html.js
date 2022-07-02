@@ -37,7 +37,7 @@ const createText = value => {
     }
 };
 
-const createDocumentFragment = (parent = null) => {
+const createDocFrag = (parent = null) => {
     return {
         tagName: DOCUMENT_FRAGMENT,
         children: [],
@@ -112,7 +112,7 @@ export function parseHTML(html) {
 
     let i = 0;
 
-    const FRAGMENT = createDocumentFragment();
+    const FRAGMENT = createDocFrag();
 
     let tag = FRAGMENT;
 
@@ -181,7 +181,7 @@ export function parseHTML(html) {
                     const isSvg = isSvgTag(tagName);
     
                     const createdTag = tagName === ''
-                        ? createDocumentFragment(parent)
+                        ? createDocFrag(parent)
                         : createTag(
                             tagName, 
                             parent, 
