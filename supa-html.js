@@ -1,9 +1,42 @@
+const SELF_CLOSING_TAGS_RGX = /br|img|input|source|wbr|hr|col|area|embed|track/;
+
+const TEXT = '#text';
+
+const DOCUMENT_FRAGMENT = '#document-fragment';
+
+const COMMENT_BEGIN = '!--';
+
+const NOT_ALLOWED_TAGS_RGX = /script|style/;
+
+const WHITE_SPACE_RGX = /\s+/;
+
+const isWhiteSpace = v => {
+    return WHITE_SPACE_RGX.test(v);
+};
+
+const isSelfClosingTag = v => SELF_CLOSING_TAGS_RGX.test(v);
+
 const createTag = (tagName, parent = null, attributes = null) => {
     return {
         tagName,
         parent,
         attributes,
         children: []
+    }
+};
+
+const createText = value => {
+    return {
+        tagName: TEXT,
+        value
+    }
+};
+
+const createDocumentFragment = (parent = null) => {
+    return {
+        tagName: DOCUMENT_FRAGMENT,
+        children: [],
+        parent
     }
 };
 
@@ -47,7 +80,7 @@ const parseAttributes = str => {
                 q = curr;
                 strOpen = true;
             }
-        } else if(curr === '=') {
+        } else if(curr === '=' && !strOpen) {
             key = value;
             value = '';
         } else {
@@ -74,22 +107,31 @@ export function parseHTML(html) {
 
     let i = 0;
 
-    const ROOT = createTag('ROOT');
+    const FRAGMENT = createDocumentFragment();
 
-    let tag = ROOT;
+    let tag = FRAGMENT;
 
     let tagName = '', text = '', attributeString = '';
 
     let isClosingTag = false;
 
-    let tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', strOpen = false;
+    let tagNameOpen = false, 
+        hasAttributes = false, 
+        tagOpen = true, 
+        q = '', 
+        commentOpen = false,
+        strOpen = false;
 
     let tagStrOpen = '';
 
     while(i < chars.length) {
         const curr = chars[i];
 
-        if(hasAttributes && (curr === '"' || curr === "'")) {
+        if(commentOpen) {
+            if(curr === '>' && chars[i - 1] === '-' && chars[i - 2] === '-') {
+                commentOpen = false;
+            }
+        } else if(hasAttributes && (curr === '"' || curr === "'")) {
             attributeString += curr;
 
             if(strOpen) {
@@ -103,24 +145,12 @@ export function parseHTML(html) {
             }
         } else if(hasAttributes && strOpen) {
             attributeString += curr;
-        } else if(curr === '<') {
-            if(chars[i + 1] === '/') {
-                isClosingTag = true;
-                i++;
-            } else {
-                if(tagOpen) {
-                    tag.children.push(text);
-                    text = '';
-                }
-
-                tagOpen = true;
-            }
-
-            tagNameOpen = true;
-        } else if(curr === '>') {
+        } else if(curr === '>' && tagNameOpen) {
             if(isClosingTag) {
                 if(text) {
-                    tag.children.push(text);
+                    const textNode = createText(text);
+
+                    tag.children.push(textNode);
                     text = '';
                 }
 
@@ -132,31 +162,61 @@ export function parseHTML(html) {
 
                 tagOpen = false;
             } else {
-                if(/script|style/.test(tagName)) {
+                if(NOT_ALLOWED_TAGS_RGX.test(tagName)) {
                     throw new Error(`${tagName} is not allowed.`);
                 }
 
-                const parent = tag;
+                if(tagName === COMMENT_BEGIN) {
+                    commentOpen = true;
+                } else {
+                    const parent = tag;
 
-                tag = createTag(
-                    tagName, 
-                    parent, 
-                    parseAttributes(attributeString)
-                );
-
-                parent.children.push(tag);
+                    tagName = tagName.toLowerCase();
+    
+                    const createdTag = tagName === ''
+                        ? createDocumentFragment(parent)
+                        : createTag(tagName, parent, parseAttributes(attributeString));
+    
+                    parent.children.push(createdTag);
+    
+                    if(!isSelfClosingTag(createdTag.tagName)) {
+                        tag = createdTag;
+                    }
+                }
             }
 
             tagNameOpen = false;
             hasAttributes = false;
             attributeString = '';
             tagName = '';
+        } else if(curr === '<') {
+            if(isWhiteSpace(chars[i + 1])) {
+                text += curr;
+            } else {
+                if(chars[i + 1] === '/') {
+                    isClosingTag = true;
+                    i++;
+                } else {
+                    if(tagOpen) {
+                        const textNode = createText(text);
+    
+                        tag.children.push(textNode);
+                        text = '';
+                    }
+    
+                    if(!isSelfClosingTag(tag.tagName)) {
+                        tagOpen = true;
+                    }
+                }
+    
+                tagNameOpen = true;
+            }
         } else if(tagNameOpen) {
             if(!hasAttributes) {
                 if(curr === ' ') {
                     hasAttributes = true;
                 } else if(curr === '\n') {
-
+                    
                 } else {
                     tagName += curr;
                 }
@@ -174,14 +234,5 @@ export function parseHTML(html) {
         throw new Error(`Attribute quote open in <${tagStrOpen}> tag.`);
     }
 
-    return ROOT;
-}
-
-export default function html(strings, ...values) {
-    const input = values.reduce(
-        (string, value, index) => string + value + strings[index + 1], 
-        strings[0]
-    );
-
-    return parseHTML(input);
+    return FRAGMENT;
 }
