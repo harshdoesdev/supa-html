@@ -52,7 +52,7 @@ const parseAttributes = str => {
 
     let i = 0;
 
-    let value = '', key = '', strOpen = false, q = '';
+    let value = '', key = '', strOpen = false, escapeSequence = false, q = '';
 
     const reset = () => {
         key = '';
@@ -67,13 +67,15 @@ const parseAttributes = str => {
     while(i < chars.length) {
         const curr = chars[i];
 
-        if((curr === ' ' || curr === '\n') && !strOpen ) {
+        if(curr === '\\') {
+            escapeSequence = true;
+        } if((curr === ' ' || curr === '\n') && !strOpen ) {
             if(key) {
                 setAttr(key, value);
             }
         } else if(curr === '"' || curr === "'") {
             if(strOpen) {
-                if(q === curr) {
+                if(q === curr && !escapeSequence) {
                     strOpen = false;
 
                     if(key) {
@@ -82,6 +84,7 @@ const parseAttributes = str => {
                     }
                 } else {
                     value += curr;
+                    escapeSequence = false;
                 }
             } else {
                 q = curr;
@@ -127,7 +130,8 @@ export function parseHTML(html) {
         tagOpen = true, 
         q = '', 
         commentOpen = false,
-        strOpen = false;
+        strOpen = false,
+        escapeSequence = false;
 
     let tagStrOpen = '';
 
@@ -138,12 +142,17 @@ export function parseHTML(html) {
             if(curr === '>' && chars[i - 1] === '-' && chars[i - 2] === '-') {
                 commentOpen = false;
             }
+        } else if(curr === '\\' && hasAttributes) {
+            attributeString += '\\';
+            escapeSequence = true;
         } else if(hasAttributes && (curr === '"' || curr === "'")) {
             attributeString += curr;
 
             if(strOpen) {
-                if(q === curr) {
+                if(q === curr && !escapeSequence) {
                     strOpen = false;
+                } else {
+                    escapeSequence = false;
                 }
             } else {
                 q = curr;
@@ -190,6 +199,8 @@ export function parseHTML(html) {
                             parseAttributes(attributeString),
                             isSvg || parent.isSvg
                         );
+
+                    console.log(attributeString)
     
                     parent.children.push(createdTag);
     
