@@ -1,5 +1,7 @@
 const SELF_CLOSING_TAGS_RGX = /br|img|input|source|wbr|hr|col|area|embed|track/;
 
+const SVG_TAGS_RGX = /animate|animateMotion|animateTransform|circle|clipPath|defs|desc|discard|ellipse|feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDistantLight|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|fePointLight|feSpecularLighting|feSpotLight|feTile|feTurbulence|filter|foreignObject|g|image|line|linearGradient|marker|mask|metadata|mpath|path|pattern|polygon|polyline|radialGradient|rect|set|stop|svg|switch|symbol|text|textPath|tspan|unknown|use|view/;
+
 const TEXT = '#text';
 
 const DOCUMENT_FRAGMENT = '#document-fragment';
@@ -16,9 +18,12 @@ const isWhiteSpace = v => {
 
 const isSelfClosingTag = v => SELF_CLOSING_TAGS_RGX.test(v);
 
-const createTag = (tagName, parent = null, attributes = null) => {
+const isSvgTag = v => SVG_TAGS_RGX.test(v) && v !== 'img';
+
+const createTag = (tagName, parent = null, attributes = null, isSvg = false) => {
     return {
         tagName,
+        isSvg,
         parent,
         attributes,
         children: []
@@ -172,10 +177,17 @@ export function parseHTML(html) {
                     const parent = tag;
 
                     tagName = tagName.toLowerCase();
+
+                    const isSvg = isSvgTag(tagName);
     
                     const createdTag = tagName === ''
                         ? createDocumentFragment(parent)
-                        : createTag(tagName, parent, parseAttributes(attributeString));
+                        : createTag(
+                            tagName, 
+                            parent, 
+                            parseAttributes(attributeString),
+                            isSvg || parent.isSvg
+                        );
     
                     parent.children.push(createdTag);
     
