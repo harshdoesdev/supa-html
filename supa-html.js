@@ -156,9 +156,10 @@ export function parseHTML(html) {
 
     while(i < chars.length) {
         const curr = chars[i];
+        const next = chars[i + 1];
 
         if(isPlainText) {
-            if(curr === OP.ANGLE_BRACKET_OPEN && chars[i + 1] === OP.SLASH) {
+            if(curr === OP.ANGLE_BRACKET_OPEN && next === OP.SLASH) {
                 let temp = '';
 
                 let j = i + 2;
@@ -212,7 +213,7 @@ export function parseHTML(html) {
             }
         } else if(hasAttributes && strOpen) {
             attributeString += curr;
-        } else if(curr === OP.BRACKET_OPEN && chars[i + 1] === OP.BRACKET_OPEN) {
+        } else if(curr === OP.BRACKET_OPEN && next === OP.BRACKET_OPEN) {
             if(text) {
                 const textNode = createText(text);
 
@@ -281,7 +282,7 @@ export function parseHTML(html) {
                 tag.children.push(textNode);
                 text = '';
             }
-            
+
             if(isClosingTag) {
                 if(lastTag === tag.tagName) {
                     tag = tag.parent;
@@ -334,10 +335,10 @@ export function parseHTML(html) {
             attributeString = '';
             tagName = '';
         } else if(curr === OP.ANGLE_BRACKET_OPEN) {
-            if(isWhiteSpace(chars[i + 1])) {
+            if(isWhiteSpace(next)) {
                 text += curr;
             } else {
-                if(chars[i + 1] === OP.SLASH) {
+                if(next === OP.SLASH) {
                     isClosingTag = true;
                     i++;
                 } else {
