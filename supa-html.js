@@ -172,6 +172,7 @@ export function parseHTML(html) {
         if(isPlainText) {
             if(tag.type === 'script' && curr === OP.ESCAPE) {
                 escapeSequence = true;
+                text += curr;
             } else if(
                 tag.type === 'script' && 
                 curr === OP.SLASH && 
@@ -207,7 +208,7 @@ export function parseHTML(html) {
                     curr === OP.BACKTICK
                 )
             ) {
-                text += escapeSequence ? `${OP.ESCAPE}${curr}` : curr;
+                text += curr;
 
                 if(jsStrOpen) {
                     if(q === curr && !escapeSequence) {
@@ -350,8 +351,6 @@ export function parseHTML(html) {
             }
 
             if(isClosingTag) {
-
-                console.log(lastTag, tag.type)
                 if(lastTag === tag.type) {
                     tag = tag.parent;
                     lastTag = tag.type;
