@@ -177,7 +177,8 @@ export function parseHTML(html) {
                 tag.type === 'script' && 
                 curr === OP.SLASH && 
                 next === OP.SLASH &&
-                !jsSingleLineCommment
+                !jsSingleLineCommment &&
+                !jsMultiLineComment
             ) {
                 jsSingleLineCommment = true;
                 i++;
@@ -185,6 +186,7 @@ export function parseHTML(html) {
                 (tag.type === 'script' || tag.type === 'style') && 
                 curr === OP.SLASH && 
                 next === OP.MULTIPLY &&
+                !jsMultiLineComment &&
                 !jsSingleLineCommment
             ) {
                 jsMultiLineComment = true;
@@ -351,7 +353,7 @@ export function parseHTML(html) {
             }
 
             if(isClosingTag) {
-                if(lastTag === tag.type) {
+                if(lastTag === tag.type && tag !== FRAGMENT) {
                     tag = tag.parent;
                     lastTag = tag.type;
                 }
