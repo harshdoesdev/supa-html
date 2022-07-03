@@ -12,6 +12,19 @@ const COMMENT_BEGIN = '!--';
 
 const WHITE_SPACE_RGX = /\s+/;
 
+const OP = {
+    DOUBLE_QUOTE: '"',
+    SINGLE_QUOTE: "'",
+    ANGLE_BRACKET_OPEN: '<',
+    ANGLE_BRACKET_CLOSE: '>',
+    MINUS: '-',
+    SLASH: '/',
+    EQUAL: '=',
+    GRAVE: '`',
+    BRACKET_OPEN: '{',
+    BRACKET_CLOSE: '}'
+};
+
 const isWhiteSpace = v => {
     return WHITE_SPACE_RGX.test(v);
 };
@@ -52,7 +65,11 @@ const parseAttributes = str => {
 
     let i = 0;
 
-    let value = '', key = '', strOpen = false, escapeSequence = false, q = '';
+    let value = '', 
+        key = '', 
+        strOpen = false, 
+        escapeSequence = false, 
+        q = '';
 
     const reset = () => {
         key = '';
@@ -73,7 +90,7 @@ const parseAttributes = str => {
             if(key) {
                 setAttr(key, value);
             }
-        } else if(curr === '"' || curr === "'") {
+        } else if(curr === OP.DOUBLE_QUOTE || curr === OP.SINGLE_QUOTE) {
             if(strOpen) {
                 if(q === curr && !escapeSequence) {
                     strOpen = false;
@@ -90,7 +107,7 @@ const parseAttributes = str => {
                 q = curr;
                 strOpen = true;
             }
-        } else if(curr === '=' && !strOpen) {
+        } else if(curr === OP.EQUAL && !strOpen) {
             key = value;
             value = '';
         } else {
@@ -115,32 +132,32 @@ const parseAttributes = str => {
 export function parseHTML(html) {
     const chars = html.split('');
 
-    let i = 0;
-
     const FRAGMENT = createDocFrag();
 
     let tag = FRAGMENT;
 
-    let tagName = '', text = '', attributeString = '';
+    let i = 0;
 
-    let isClosingTag = false;
-
-    let tagNameOpen = false, 
+    let tagName = '', 
+        text = '', 
+        attributeString = '',
+        isClosingTag = false,
+        tagNameOpen = false, 
         hasAttributes = false, 
         tagOpen = true, 
         q = '', 
         commentOpen = false,
         strOpen = false,
         escapeSequence = false,
-        isPlainText = false;
-
-    let tagStrOpen = '', lastTag = '';
+        isPlainText = false,
+        lastTag = '',
+        tagStrOpen = '';
 
     while(i < chars.length) {
         const curr = chars[i];
 
         if(isPlainText) {
-            if(curr === '<' && chars[i + 1] === '/') {
+            if(curr === OP.ANGLE_BRACKET_OPEN && chars[i + 1] === OP.SLASH) {
                 let temp = '';
 
                 let j = i + 2;
@@ -148,7 +165,7 @@ export function parseHTML(html) {
                 while(j < chars.length) {
                     const c = chars[j];
 
-                    if(c === '>') {
+                    if(c === OP.ANGLE_BRACKET_CLOSE) {
                         break;
                     }
 
@@ -168,13 +185,17 @@ export function parseHTML(html) {
                 text += curr;
             }
         } else if(commentOpen) {
-            if(curr === '>' && chars[i - 1] === '-' && chars[i - 2] === '-') {
+            if(
+                curr === OP.ANGLE_BRACKET_CLOSE && 
+                chars[i - 1] === OP.MINUS && 
+                chars[i - 2] === OP.MINUS
+            ) {
                 commentOpen = false;
             }
         } else if(curr === '\\' && hasAttributes) {
             attributeString += '\\';
             escapeSequence = true;
-        } else if(hasAttributes && (curr === '"' || curr === "'")) {
+        } else if(hasAttributes && (curr === OP.DOUBLE_QUOTE || curr === OP.SINGLE_QUOTE)) {
             attributeString += curr;
 
             if(strOpen) {
@@ -190,7 +211,69 @@ export function parseHTML(html) {
             }
         } else if(hasAttributes && strOpen) {
             attributeString += curr;
-        } else if(curr === '>' && tagNameOpen) {
+        } else if(curr === OP.BRACKET_OPEN && chars[i + 1] === OP.BRACKET_OPEN) {
+            if(text) {
+                const textNode = createText(text);
+
+                tag.children.push(textNode);
+                text = '';
+            }
+
+            const interp = {
+                tagName: '#interpolation',
+                value: ''
+            };
+
+            i += 2;
+
+            while(i < chars.length) {
+                const c = chars[i];
+
+                if(c === OP.GRAVE && !strOpen) {
+                    throw new Error(
+                        `Template Literals are not allowed in interpolations.`
+                    )
+                }
+
+                if(
+                    c === OP.DOUBLE_QUOTE || 
+                    c === OP.SINGLE_QUOTE
+                ) {
+                    interp.value += c;
+
+                    if(strOpen) {
+                        if(q === c && !escapeSequence) {
+                            interp.value += text;
+                            strOpen = false;
+                            q = '';
+                            text = '';
+                        } else {
+                            text += c;
+                        }
+                    } else {
+                        strOpen = true;
+                        q = c;
+                    }
+                } else if(
+                    c === OP.BRACKET_CLOSE && 
+                    chars[i + 1] === OP.BRACKET_CLOSE && 
+                    !strOpen
+                ) {
+                    i++;
+                    break;
+                } else {
+                    interp.value += c;
+                }
+                
+                i++;
+            }
+            
+            if(!interp.value) {
+                throw new Error("Interpolation can't be empty.");
+            }
+
+            tag.children.push(interp);
+        } else if(curr === OP.ANGLE_BRACKET_CLOSE && tagNameOpen) {
             if(isClosingTag) {
                 if(text) {
                     const textNode = createText(text);
@@ -212,7 +295,7 @@ export function parseHTML(html) {
                 tagName = tagName.toLowerCase();
 
                 if(tagName === 'script') {
-                    throw new Error(`Script tag is not allowed.`);
+                    throw new Error(`<script> tag is not allowed.`);
                 }
 
                 if(tagName === COMMENT_BEGIN) {
@@ -249,11 +332,11 @@ export function parseHTML(html) {
             hasAttributes = false;
             attributeString = '';
             tagName = '';
-        } else if(curr === '<') {
+        } else if(curr === OP.ANGLE_BRACKET_OPEN) {
             if(isWhiteSpace(chars[i + 1])) {
                 text += curr;
             } else {
-                if(chars[i + 1] === '/') {
+                if(chars[i + 1] === OP.SLASH) {
                     isClosingTag = true;
                     i++;
                 } else {
@@ -289,7 +372,7 @@ export function parseHTML(html) {
     }
 
     if(strOpen) {
-        throw new Error(`Attribute quote open in <${tagStrOpen}> tag.`);
+        throw new Error(`Unexpected \`${q}\`.`);
     }
 
     return FRAGMENT;
