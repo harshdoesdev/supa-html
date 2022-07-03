@@ -174,6 +174,8 @@ export function parseHTML(html) {
                 escapeSequence = true;
             } else if(
                 tag.type === 'script' &&
+                !jsMultiLineComment &&
+                !jsSingleLineCommment &&
                 (
                     curr === OP.DOUBLE_QUOTE ||
                     curr === OP.SINGLE_QUOTE ||
