@@ -8,6 +8,8 @@ const TEXT = '#text';
 
 const DOCUMENT_FRAGMENT = '#document-fragment';
 
+const INTERPOLATION = '#interpolation';
+
 const COMMENT_BEGIN = '!--';
 
 const WHITE_SPACE_RGX = /\s+/;
@@ -56,6 +58,13 @@ const createDocFrag = (parent = null) => {
         tagName: DOCUMENT_FRAGMENT,
         children: [],
         parent
+    }
+};
+
+const createInteroplation = value => {
+    return {
+        tagName: INTERPOLATION,
+        value: value.trim()
     }
 };
 
@@ -221,10 +230,7 @@ export function parseHTML(html) {
                 text = '';
             }
 
-            const interp = {
-                tagName: '#interpolation',
-                value: ''
-            };
+            let value = '';
 
             i += 2;
 
@@ -241,11 +247,11 @@ export function parseHTML(html) {
                     c === OP.DOUBLE_QUOTE || 
                     c === OP.SINGLE_QUOTE
                 ) {
-                    interp.value += c;
+                    value += c;
 
                     if(strOpen) {
                         if(q === c && !escapeSequence) {
-                            interp.value += text;
+                            value += text;
                             strOpen = false;
                             q = '';
                             text = '';
@@ -264,12 +270,16 @@ export function parseHTML(html) {
                     i++;
                     break;
                 } else {
-                    interp.value += c;
+                    value += c;
                 }
                 
                 i++;
             }
             
+            value = value.trim();
+
+            const interp = createInteroplation(value);
+
             if(!interp.value) {
                 throw new Error("Interpolation can't be empty.");
             }
