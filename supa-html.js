@@ -15,6 +15,7 @@ const OP = {
     ANGLE_BRACKET_CLOSE: '>',
     MINUS: '-',
     SLASH: '/',
+    MULTIPLY: '*',
     EQUAL: '=',
     BACKTICK: '`',
     BRACE_OPEN: '{',
@@ -159,14 +160,71 @@ export function parseHTML(html) {
         escapeSequence = false,
         isPlainText = false,
         lastTag = '',
-        tagStrOpen = '';
+        tagStrOpen = '',
+        jsSingleLineCommment = false,
+        jsMultiLineComment = false,
+        jsStrOpen = false;
 
     while(i < chars.length) {
         const curr = chars[i];
         const next = chars[i + 1];
 
         if(isPlainText) {
-            if(curr === OP.ANGLE_BRACKET_OPEN && next === OP.SLASH) {
+            if(tag.type === 'script' && curr === OP.ESCAPE) {
+                escapeSequence = true;
+            } else if(
+                tag.type === 'script' &&
+                (
+                    curr === OP.DOUBLE_QUOTE ||
+                    curr === OP.SINGLE_QUOTE ||
+                    curr === OP.BACKTICK
+                )
+            ) {
+                text += curr;
+
+                if(jsStrOpen) {
+                    if(q === curr && !escapeSequence) {
+                        jsStrOpen = false;
+                        q = '';
+                    } else {
+                        escapeSequence = false;
+                    }
+                } else {
+                    jsStrOpen = true;
+                    q = curr;
+                }
+            } else if(
+                tag.type === 'script' && 
+                curr === OP.SLASH && 
+                next === OP.SLASH &&
+                !jsSingleLineCommment
+            ) {
+                jsSingleLineCommment = true;
+                i++;
+            } else if(
+                (tag.type === 'script' || tag.type === 'style') && 
+                curr === OP.SLASH && 
+                next === OP.MULTIPLY &&
+                !jsSingleLineCommment
+            ) {
+                jsMultiLineComment = true;
+                i++;
+            } else if(
+                jsMultiLineComment &&
+                curr === OP.MULTIPLY &&
+                next === OP.SLASH
+            ) {
+                jsMultiLineComment = false;
+                i++;
+            } else if(curr === '\n' && jsSingleLineCommment) {
+                jsSingleLineCommment = false;
+            } else if(jsSingleLineCommment || jsMultiLineComment) {
+                // -------
+            } else if(
+                curr === OP.ANGLE_BRACKET_OPEN && 
+                next === OP.SLASH &&
+                !jsStrOpen
+            ) {
                 let temp = '';
 
                 let j = i + 2;
@@ -303,10 +361,6 @@ export function parseHTML(html) {
                 lastTag = '';
             } else {
                 type = type.toLowerCase();
-
-                if(type === 'script') {
-                    throw new Error(`<script> tag is not allowed.`);
-                }
 
                 if(type === COMMENT_BEGIN) {
                     commentOpen = true;
