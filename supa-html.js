@@ -20,9 +20,10 @@ const OP = {
     MINUS: '-',
     SLASH: '/',
     EQUAL: '=',
-    GRAVE: '`',
+    BACKTICK: '`',
     BRACKET_OPEN: '{',
-    BRACKET_CLOSE: '}'
+    BRACKET_CLOSE: '}',
+    ESCAPE: '\\'
 };
 
 const isWhiteSpace = v => {
@@ -84,7 +85,7 @@ const parseAttributes = str => {
     while(i < chars.length) {
         const curr = chars[i];
 
-        if(curr === '\\') {
+        if(curr === OP.ESCAPE) {
             escapeSequence = true;
         } if((curr === ' ' || curr === '\n') && !strOpen ) {
             if(key) {
@@ -192,8 +193,8 @@ export function parseHTML(html) {
             ) {
                 commentOpen = false;
             }
-        } else if(curr === '\\' && hasAttributes) {
-            attributeString += '\\';
+        } else if(curr === OP.ESCAPE && hasAttributes) {
+            attributeString += OP.ESCAPE;
             escapeSequence = true;
         } else if(hasAttributes && (curr === OP.DOUBLE_QUOTE || curr === OP.SINGLE_QUOTE)) {
             attributeString += curr;
@@ -229,7 +230,7 @@ export function parseHTML(html) {
             while(i < chars.length) {
                 const c = chars[i];
 
-                if(c === OP.GRAVE && !strOpen) {
+                if(c === OP.BACKTICK && !strOpen) {
                     throw new Error(
                         `Template Literals are not allowed in interpolations.`
                     )
