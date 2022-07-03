@@ -4,12 +4,6 @@ const SVG_TAGS_RGX = /^(animate|animateMotion|animateTransform|circle|clipPath|d
 
 const PLAIN_TEXT_TAGS_RGX = /^(textarea|style|script)$/;
 
-const TEXT = '#text';
-
-const DOCUMENT_FRAGMENT = '#document-fragment';
-
-const INTERPOLATION = '#interpolation';
-
 const COMMENT_BEGIN = '!--';
 
 const WHITE_SPACE_RGX = /\s+/;
@@ -23,22 +17,26 @@ const OP = {
     SLASH: '/',
     EQUAL: '=',
     BACKTICK: '`',
-    BRACKET_OPEN: '{',
-    BRACKET_CLOSE: '}',
+    BRACE_OPEN: '{',
+    BRACE_CLOSE: '}',
     ESCAPE: '\\'
 };
 
-const isWhiteSpace = v => {
-    return WHITE_SPACE_RGX.test(v);
+const NODE_TYPE = {
+    TEXT: '#text',
+    DOCUMENT_FRAGMENT: '#document-fragment',
+    INTERPOLATION: '#interpolation'
 };
+
+const isWhiteSpace = v => WHITE_SPACE_RGX.test(v);
 
 const isSelfClosingTag = v => SELF_CLOSING_TAGS_RGX.test(v);
 
 const isSvgTag = v => SVG_TAGS_RGX.test(v);
 
-const createTag = (tagName, parent = null, attributes = {}, isSvg = false) => {
+const createTag = (type, parent = null, attributes = {}, isSvg = false) => {
     return {
-        tagName,
+        type,
         isSvg,
         parent,
         attributes,
@@ -48,14 +46,14 @@ const createTag = (tagName, parent = null, attributes = {}, isSvg = false) => {
 
 const createText = value => {
     return {
-        tagName: TEXT,
+        type: NODE_TYPE.TEXT,
         value
     }
 };
 
 const createDocFrag = (parent = null) => {
     return {
-        tagName: DOCUMENT_FRAGMENT,
+        type: NODE_TYPE.DOCUMENT_FRAGMENT,
         children: [],
         parent
     }
@@ -63,7 +61,7 @@ const createDocFrag = (parent = null) => {
 
 const createInteroplation = value => {
     return {
-        tagName: INTERPOLATION,
+        type: NODE_TYPE.INTERPOLATION,
         value: value.trim()
     }
 };
@@ -148,7 +146,7 @@ export function parseHTML(html) {
 
     let i = 0;
 
-    let tagName = '', 
+    let type = '', 
         text = '', 
         attributeString = '',
         isClosingTag = false,
@@ -185,7 +183,7 @@ export function parseHTML(html) {
                     j++;
                 }
 
-                if(temp.trim() === tag.tagName) {
+                if(temp.trim() === tag.type) {
                     isPlainText = false;
                     i = i - 1;
                 } else {
@@ -218,11 +216,11 @@ export function parseHTML(html) {
             } else {
                 q = curr;
                 strOpen = true;
-                tagStrOpen = tagName;
+                tagStrOpen = type;
             }
         } else if(hasAttributes && strOpen) {
             attributeString += curr;
-        } else if(curr === OP.BRACKET_OPEN && next === OP.BRACKET_OPEN) {
+        } else if(curr === OP.BRACE_OPEN && next === OP.BRACE_OPEN) {
             if(text) {
                 const textNode = createText(text);
 
@@ -263,8 +261,8 @@ export function parseHTML(html) {
                         q = c;
                     }
                 } else if(
-                    c === OP.BRACKET_CLOSE && 
-                    chars[i + 1] === OP.BRACKET_CLOSE && 
+                    c === OP.BRACE_CLOSE && 
+                    chars[i + 1] === OP.BRACE_CLOSE && 
                     !strOpen
                 ) {
                     i++;
@@ -294,7 +292,7 @@ export function parseHTML(html) {
             }
 
             if(isClosingTag) {
-                if(lastTag === tag.tagName) {
+                if(lastTag === tag.type) {
                     tag = tag.parent;
                 }
                 
@@ -304,23 +302,23 @@ export function parseHTML(html) {
 
                 lastTag = '';
             } else {
-                tagName = tagName.toLowerCase();
+                type = type.toLowerCase();
 
-                if(tagName === 'script') {
+                if(type === 'script') {
                     throw new Error(`<script> tag is not allowed.`);
                 }
 
-                if(tagName === COMMENT_BEGIN) {
+                if(type === COMMENT_BEGIN) {
                     commentOpen = true;
                 } else {
                     const parent = tag;
 
-                    const isSvg = isSvgTag(tagName);
+                    const isSvg = isSvgTag(type);
     
-                    const createdTag = tagName === ''
+                    const createdTag = type === ''
                         ? createDocFrag(parent)
                         : createTag(
-                            tagName, 
+                            type, 
                             parent, 
                             parseAttributes(attributeString),
                             isSvg || parent.isSvg
@@ -328,22 +326,22 @@ export function parseHTML(html) {
     
                     parent.children.push(createdTag);
     
-                    if(!isSelfClosingTag(tagName)) {
+                    if(!isSelfClosingTag(type)) {
                         tag = createdTag;
                     }
 
-                    if(PLAIN_TEXT_TAGS_RGX.test(tagName)) {
+                    if(PLAIN_TEXT_TAGS_RGX.test(type)) {
                         isPlainText = true;
                     }
 
-                    lastTag = tagName;
+                    lastTag = type;
                 }
             }
 
             tagNameOpen = false;
             hasAttributes = false;
             attributeString = '';
-            tagName = '';
+            type = '';
         } else if(curr === OP.ANGLE_BRACKET_OPEN) {
             if(isWhiteSpace(next)) {
                 text += curr;
@@ -359,7 +357,7 @@ export function parseHTML(html) {
                         text = '';
                     }
     
-                    if(!isSelfClosingTag(tag.tagName)) {
+                    if(!isSelfClosingTag(tag.type)) {
                         tagOpen = true;
                     }
                 }
@@ -371,7 +369,7 @@ export function parseHTML(html) {
                 if(isWhiteSpace(curr)) {
                     hasAttributes = true;
                 } else {
-                    tagName += curr;
+                    type += curr;
                 }
             } else {
                 attributeString += curr;
