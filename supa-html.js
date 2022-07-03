@@ -332,6 +332,10 @@ export function parseHTML(html) {
 
                     if(PLAIN_TEXT_TAGS_RGX.test(type)) {
                         isPlainText = true;
+                        
+                        if(next === '\n') {
+                            i++;
+                        }
                     }
 
                     lastTag = type;
