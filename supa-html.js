@@ -1,14 +1,14 @@
-const SELF_CLOSING_TAGS_RGX = /br|img|input|source|wbr|hr|col|area|embed|track/;
+const SELF_CLOSING_TAGS_RGX = /^(br|img|input|source|wbr|hr|col|area|embed|track)$/;
 
-const SVG_TAGS_RGX = /animate|animateMotion|animateTransform|circle|clipPath|defs|desc|discard|ellipse|feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDistantLight|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|fePointLight|feSpecularLighting|feSpotLight|feTile|feTurbulence|filter|foreignObject|g|image|line|linearGradient|marker|mask|metadata|mpath|path|pattern|polygon|polyline|radialGradient|rect|set|stop|svg|switch|symbol|text|textPath|tspan|unknown|use|view/;
+const SVG_TAGS_RGX = /^(animate|animateMotion|animateTransform|circle|clipPath|defs|desc|discard|ellipse|feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDistantLight|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|fePointLight|feSpecularLighting|feSpotLight|feTile|feTurbulence|filter|foreignObject|g|image|line|linearGradient|marker|mask|metadata|mpath|path|pattern|polygon|polyline|radialGradient|rect|set|stop|svg|switch|symbol|text|textPath|tspan|unknown|use|view)$/;
+
+const PLAIN_TEXT_TAGS_RGX = /^(textarea|style|script)$/;
 
 const TEXT = '#text';
 
 const DOCUMENT_FRAGMENT = '#document-fragment';
 
 const COMMENT_BEGIN = '!--';
-
-const NOT_ALLOWED_TAGS_RGX = /script|style/;
 
 const WHITE_SPACE_RGX = /\s+/;
 
@@ -18,9 +18,9 @@ const isWhiteSpace = v => {
 
 const isSelfClosingTag = v => SELF_CLOSING_TAGS_RGX.test(v);
 
-const isSvgTag = v => SVG_TAGS_RGX.test(v) && v !== 'img';
+const isSvgTag = v => SVG_TAGS_RGX.test(v);
 
-const createTag = (tagName, parent = null, attributes = null, isSvg = false) => {
+const createTag = (tagName, parent = null, attributes = {}, isSvg = false) => {
     return {
         tagName,
         isSvg,
@@ -131,14 +131,43 @@ export function parseHTML(html) {
         q = '', 
         commentOpen = false,
         strOpen = false,
-        escapeSequence = false;
+        escapeSequence = false,
+        isPlainText = false;
 
-    let tagStrOpen = '';
+    let tagStrOpen = '', lastTag = '';
 
     while(i < chars.length) {
         const curr = chars[i];
 
-        if(commentOpen) {
+        if(isPlainText) {
+            if(curr === '<' && chars[i + 1] === '/') {
+                let temp = '';
+
+                let j = i + 2;
+
+                while(j < chars.length) {
+                    const c = chars[j];
+
+                    if(c === '>') {
+                        break;
+                    }
+
+                    temp += c;
+
+                    j++;
+                }
+
+                if(temp.trim() === tag.tagName) {
+                    isPlainText = false;
+                    i = i - 1;
+                } else {
+                    text += `</${temp}>`;
+                    i = j;
+                }
+            } else {
+                text += curr;
+            }
+        } else if(commentOpen) {
             if(curr === '>' && chars[i - 1] === '-' && chars[i - 2] === '-') {
                 commentOpen = false;
             }
@@ -170,24 +199,26 @@ export function parseHTML(html) {
                     text = '';
                 }
 
-                if(tagName === tag.tagName) {
+                if(lastTag === tag.tagName) {
                     tag = tag.parent;
                 }
                 
                 isClosingTag = false;   
 
                 tagOpen = false;
+
+                lastTag = '';
             } else {
-                if(NOT_ALLOWED_TAGS_RGX.test(tagName)) {
-                    throw new Error(`${tagName} is not allowed.`);
+                tagName = tagName.toLowerCase();
+
+                if(tagName === 'script') {
+                    throw new Error(`Script tag is not allowed.`);
                 }
 
                 if(tagName === COMMENT_BEGIN) {
                     commentOpen = true;
                 } else {
                     const parent = tag;
-
-                    tagName = tagName.toLowerCase();
 
                     const isSvg = isSvgTag(tagName);
     
@@ -202,9 +233,15 @@ export function parseHTML(html) {
     
                     parent.children.push(createdTag);
     
-                    if(!isSelfClosingTag(createdTag.tagName)) {
+                    if(!isSelfClosingTag(tagName)) {
                         tag = createdTag;
                     }
+
+                    if(PLAIN_TEXT_TAGS_RGX.test(tagName)) {
+                        isPlainText = true;
+                    }
+
+                    lastTag = tagName;
                 }
             }
 
@@ -244,7 +281,7 @@ export function parseHTML(html) {
             } else {
                 attributeString += curr;
             }
-        } else if(tagOpen && !isClosingTag) {
+        } else if(!isClosingTag) {
             text += curr;
         }
 
