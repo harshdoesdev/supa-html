@@ -275,14 +275,14 @@ export function parseHTML(html) {
 
             tag.children.push(interp);
         } else if(curr === OP.ANGLE_BRACKET_CLOSE && tagNameOpen) {
+            if(text) {
+                const textNode = createText(text);
+
+                tag.children.push(textNode);
+                text = '';
+            }
+            
             if(isClosingTag) {
-                if(text) {
-                    const textNode = createText(text);
-
-                    tag.children.push(textNode);
-                    text = '';
-                }
-
                 if(lastTag === tag.tagName) {
                     tag = tag.parent;
                 }
