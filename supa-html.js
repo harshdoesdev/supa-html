@@ -173,29 +173,6 @@ export function parseHTML(html) {
             if(tag.type === 'script' && curr === OP.ESCAPE) {
                 escapeSequence = true;
             } else if(
-                tag.type === 'script' &&
-                !jsMultiLineComment &&
-                !jsSingleLineCommment &&
-                (
-                    curr === OP.DOUBLE_QUOTE ||
-                    curr === OP.SINGLE_QUOTE ||
-                    curr === OP.BACKTICK
-                )
-            ) {
-                text += curr;
-
-                if(jsStrOpen) {
-                    if(q === curr && !escapeSequence) {
-                        jsStrOpen = false;
-                        q = '';
-                    } else {
-                        escapeSequence = false;
-                    }
-                } else {
-                    jsStrOpen = true;
-                    q = curr;
-                }
-            } else if(
                 tag.type === 'script' && 
                 curr === OP.SLASH && 
                 next === OP.SLASH &&
@@ -222,6 +199,27 @@ export function parseHTML(html) {
                 jsSingleLineCommment = false;
             } else if(jsSingleLineCommment || jsMultiLineComment) {
                 // -------
+            } else if(
+                tag.type === 'script' &&
+                (
+                    curr === OP.DOUBLE_QUOTE ||
+                    curr === OP.SINGLE_QUOTE ||
+                    curr === OP.BACKTICK
+                )
+            ) {
+                text += escapeSequence ? `${OP.ESCAPE}${curr}` : curr;
+
+                if(jsStrOpen) {
+                    if(q === curr && !escapeSequence) {
+                        jsStrOpen = false;
+                        q = '';
+                    } else {
+                        escapeSequence = false;
+                    }
+                } else {
+                    jsStrOpen = true;
+                    q = curr;
+                }
             } else if(
                 curr === OP.ANGLE_BRACKET_OPEN && 
                 next === OP.SLASH &&
@@ -352,15 +350,16 @@ export function parseHTML(html) {
             }
 
             if(isClosingTag) {
+
+                console.log(lastTag, tag.type)
                 if(lastTag === tag.type) {
                     tag = tag.parent;
+                    lastTag = tag.type;
                 }
                 
                 isClosingTag = false;   
 
                 tagOpen = false;
-
-                lastTag = '';
             } else {
                 type = type.toLowerCase();
 
