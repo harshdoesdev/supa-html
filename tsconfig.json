@@ -1,10 +1,11 @@
 {
     "include": ["src"],
     "compilerOptions": {
-        "target": "ES6",
-        "allowJs": false,
-        "module": "ES6",
+        "outDir": "dist",
         "declaration": true,
-        "outDir": "dist"
+        "allowSyntheticDefaultImports": true,
+        "allowJs": false,
+        "target": "ES5",
+        "module": "CommonJS"
     }
 }

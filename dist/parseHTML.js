@@ -1,9 +1,12 @@
-const SELF_CLOSING_TAGS_RGX = /^(br|img|input|source|wbr|hr|col|area|embed|track)$/;
-const SVG_TAGS_RGX = /^(animate|animateMotion|animateTransform|circle|clipPath|defs|desc|discard|ellipse|feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDistantLight|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|fePointLight|feSpecularLighting|feSpotLight|feTile|feTurbulence|filter|foreignObject|g|image|line|linearGradient|marker|mask|metadata|mpath|path|pattern|polygon|polyline|radialGradient|rect|set|stop|svg|switch|symbol|text|textPath|tspan|unknown|use|view)$/;
-const PLAIN_TEXT_TAGS_RGX = /^(textarea|style|script)$/;
-const COMMENT_BEGIN = '!--';
-const WHITE_SPACE_RGX = /\s+/;
-const OP = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseHTML = void 0;
+var SELF_CLOSING_TAGS_RGX = /^(br|img|input|source|wbr|hr|col|area|embed|track)$/;
+var SVG_TAGS_RGX = /^(animate|animateMotion|animateTransform|circle|clipPath|defs|desc|discard|ellipse|feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDistantLight|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|fePointLight|feSpecularLighting|feSpotLight|feTile|feTurbulence|filter|foreignObject|g|image|line|linearGradient|marker|mask|metadata|mpath|path|pattern|polygon|polyline|radialGradient|rect|set|stop|svg|switch|symbol|text|textPath|tspan|unknown|use|view)$/;
+var PLAIN_TEXT_TAGS_RGX = /^(textarea|style|script)$/;
+var COMMENT_BEGIN = '!--';
+var WHITE_SPACE_RGX = /\s+/;
+var OP = {
     DOUBLE_QUOTE: '"',
     SINGLE_QUOTE: "'",
     ANGLE_BRACKET_OPEN: '<',
@@ -17,58 +20,63 @@ const OP = {
     BRACE_CLOSE: '}',
     ESCAPE: '\\'
 };
-const NODE_TYPE = {
+var NODE_TYPE = {
     TEXT: '#text',
     DOCUMENT_FRAGMENT: '#document-fragment',
     INTERPOLATION: '#interpolation'
 };
-const isWhiteSpace = (v) => WHITE_SPACE_RGX.test(v);
-const isSelfClosingTag = (v) => SELF_CLOSING_TAGS_RGX.test(v);
-const isSvgTag = (v) => SVG_TAGS_RGX.test(v);
-const createTag = (type, parent = null, attributes = {}, isSvg = false) => {
+var isWhiteSpace = function (v) { return WHITE_SPACE_RGX.test(v); };
+var isSelfClosingTag = function (v) { return SELF_CLOSING_TAGS_RGX.test(v); };
+var isSvgTag = function (v) { return SVG_TAGS_RGX.test(v); };
+var createTag = function (type, parent, attributes, isSvg) {
+    if (parent === void 0) { parent = null; }
+    if (attributes === void 0) { attributes = {}; }
+    if (isSvg === void 0) { isSvg = false; }
     return {
-        type,
-        isSvg,
-        parent,
-        attributes,
+        type: type,
+        isSvg: isSvg,
+        parent: parent,
+        attributes: attributes,
         children: []
     };
 };
-const createText = (value) => {
+var createText = function (value) {
     return {
         type: NODE_TYPE.TEXT,
-        value
+        value: value
     };
 };
-const createDocFrag = (parent = null, isSvg = false) => {
+var createDocFrag = function (parent, isSvg) {
+    if (parent === void 0) { parent = null; }
+    if (isSvg === void 0) { isSvg = false; }
     return {
         type: NODE_TYPE.DOCUMENT_FRAGMENT,
         children: [],
-        parent,
-        isSvg
+        parent: parent,
+        isSvg: isSvg
     };
 };
-const createInteroplation = (value) => {
+var createInteroplation = function (value) {
     return {
         type: NODE_TYPE.INTERPOLATION,
         value: value.trim()
     };
 };
-const parseAttributes = (str) => {
-    const chars = str.split('');
-    const attributes = {};
-    let i = 0;
-    let value = '', key = '', strOpen = false, escapeSequence = false, q = '';
-    const reset = () => {
+var parseAttributes = function (str) {
+    var chars = str.split('');
+    var attributes = {};
+    var i = 0;
+    var value = '', key = '', strOpen = false, escapeSequence = false, q = '';
+    var reset = function () {
         key = '';
         value = '';
     };
-    const setAttr = (key, value) => {
+    var setAttr = function (key, value) {
         attributes[key] = value;
         reset();
     };
     while (i < chars.length) {
-        const curr = chars[i];
+        var curr = chars[i];
         if (curr === OP.ESCAPE) {
             escapeSequence = true;
         }
@@ -114,15 +122,16 @@ const parseAttributes = (str) => {
     }
     return attributes;
 };
-export function parseHTML(html, allowScripts = false) {
-    const chars = html.split('');
-    const FRAGMENT = createDocFrag();
-    let tag = FRAGMENT;
-    let i = 0;
-    let type = '', text = '', attributeString = '', isClosingTag = false, tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', commentOpen = false, strOpen = false, escapeSequence = false, isPlainText = false, lastTag = '', tagStrOpen = '', jsSingleLineCommment = false, jsMultiLineComment = false, jsStrOpen = false;
+function parseHTML(html, allowScripts) {
+    if (allowScripts === void 0) { allowScripts = false; }
+    var chars = html.split('');
+    var FRAGMENT = createDocFrag();
+    var tag = FRAGMENT;
+    var i = 0;
+    var type = '', text = '', attributeString = '', isClosingTag = false, tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', commentOpen = false, strOpen = false, escapeSequence = false, isPlainText = false, lastTag = '', tagStrOpen = '', jsSingleLineCommment = false, jsMultiLineComment = false, jsStrOpen = false;
     while (i < chars.length) {
-        const curr = chars[i];
-        const next = chars[i + 1];
+        var curr = chars[i];
+        var next = chars[i + 1];
         if (isPlainText) {
             if (tag.type === 'script' && curr === OP.ESCAPE) {
                 escapeSequence = true;
@@ -178,10 +187,10 @@ export function parseHTML(html, allowScripts = false) {
             else if (curr === OP.ANGLE_BRACKET_OPEN &&
                 next === OP.SLASH &&
                 !jsStrOpen) {
-                let temp = '';
-                let j = i + 2;
+                var temp = '';
+                var j = i + 2;
                 while (j < chars.length) {
-                    const c = chars[j];
+                    var c = chars[j];
                     if (c === OP.ANGLE_BRACKET_CLOSE) {
                         break;
                     }
@@ -193,7 +202,7 @@ export function parseHTML(html, allowScripts = false) {
                     i = i - 1;
                 }
                 else {
-                    text += `</${temp}>`;
+                    text += "</".concat(temp, ">");
                     i = j;
                 }
             }
@@ -233,16 +242,16 @@ export function parseHTML(html, allowScripts = false) {
         }
         else if (curr === OP.BRACE_OPEN && next === OP.BRACE_OPEN) {
             if (text) {
-                const textNode = createText(text);
+                var textNode = createText(text);
                 tag.children.push(textNode);
                 text = '';
             }
-            let value = '';
+            var value = '';
             i += 2;
             while (i < chars.length) {
-                const c = chars[i];
+                var c = chars[i];
                 if (c === OP.BACKTICK && !strOpen) {
-                    throw new Error(`Template Literals are not allowed in interpolations.`);
+                    throw new Error("Template Literals are not allowed in interpolations.");
                 }
                 if (c === OP.DOUBLE_QUOTE ||
                     c === OP.SINGLE_QUOTE) {
@@ -275,7 +284,7 @@ export function parseHTML(html, allowScripts = false) {
                 i++;
             }
             value = value.trim();
-            const interp = createInteroplation(value);
+            var interp = createInteroplation(value);
             if (!interp.value) {
                 throw new Error("Interpolation can't be empty.");
             }
@@ -283,7 +292,7 @@ export function parseHTML(html, allowScripts = false) {
         }
         else if (curr === OP.ANGLE_BRACKET_CLOSE && tagNameOpen) {
             if (text) {
-                const textNode = createText(text);
+                var textNode = createText(text);
                 tag.children.push(textNode);
                 text = '';
             }
@@ -304,12 +313,12 @@ export function parseHTML(html, allowScripts = false) {
                     commentOpen = true;
                 }
                 else {
-                    const parent = tag;
-                    const isSvg = isSvgTag(type);
-                    const createdTag = type === ''
-                        ? createDocFrag(parent, isSvg)
-                        : createTag(type, parent, parseAttributes(attributeString), isSvg || parent.isSvg);
-                    parent.children.push(createdTag);
+                    var parent_1 = tag;
+                    var isSvg = isSvgTag(type);
+                    var createdTag = type === ''
+                        ? createDocFrag(parent_1, isSvg)
+                        : createTag(type, parent_1, parseAttributes(attributeString), isSvg || parent_1.isSvg);
+                    parent_1.children.push(createdTag);
                     if (!isSelfClosingTag(type)) {
                         tag = createdTag;
                     }
@@ -338,7 +347,7 @@ export function parseHTML(html, allowScripts = false) {
                 }
                 else {
                     if (tagOpen) {
-                        const textNode = createText(text);
+                        var textNode = createText(text);
                         tag.children.push(textNode);
                         text = '';
                     }
@@ -368,7 +377,8 @@ export function parseHTML(html, allowScripts = false) {
         i++;
     }
     if (strOpen) {
-        throw new Error(`Unexpected \`${q}\`.`);
+        throw new Error("Unexpected `".concat(q, "`."));
     }
     return FRAGMENT;
 }
+exports.parseHTML = parseHTML;
