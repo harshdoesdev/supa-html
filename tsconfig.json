@@ -1,0 +1,10 @@
+{
+    "include": ["src"],
+    "compilerOptions": {
+        "target": "ES6",
+        "allowJs": false,
+        "module": "ES6",
+        "declaration": true,
+        "outDir": "dist"
+    }
+}

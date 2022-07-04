@@ -1,0 +1,27 @@
+{
+  "name": "supa-html",
+  "version": "0.0.1",
+  "description": "Supercharged HTML Parser",
+  "main": "dist/parseHTML.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "tsc --build --clean",
+    "build": "tsc --build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rare-earth/supa-html.git"
+  },
+  "keywords": [
+    "html",
+    "parser"
+  ],
+  "author": "Harsh Singh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rare-earth/supa-html/issues"
+  },
+  "homepage": "https://github.com/rare-earth/supa-html#readme"
+}
