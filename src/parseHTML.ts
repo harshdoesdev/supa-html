@@ -35,12 +35,12 @@ const isSelfClosingTag = (v: string) => SELF_CLOSING_TAGS_RGX.test(v);
 
 const isSvgTag = (v: string) => SVG_TAGS_RGX.test(v);
 
-const createTag = (type: string, parent = null, attributes = {}, isSvg = false) => {
+const createTag = (type: string, parent = null, props = {}, isSvg = false) => {
     return {
         type,
         isSvg,
         parent,
-        attributes,
+        props,
         children: []
     }
 };
@@ -53,12 +53,12 @@ const createText = (value: string) => {
 };
 
 const createDocFrag = (parent = null, isSvg = false) => {
-    return {
-        type: NODE_TYPE.DOCUMENT_FRAGMENT,
-        children: [],
+    return createTag(
+        NODE_TYPE.DOCUMENT_FRAGMENT,
         parent,
+        null,
         isSvg
-    }
+    );
 };
 
 const createInteroplation = (value: string) => {
@@ -142,9 +142,9 @@ const parseAttributes = (str: string) => {
 export function parseHTML(html: string, allowScripts = false) {
     const chars = html.split('');
 
-    const FRAGMENT = createDocFrag();
+    const template = createTag('template', null, {}, false);
 
-    let tag = FRAGMENT;
+    let tag = template;
 
     let i = 0;
 
@@ -354,7 +354,7 @@ export function parseHTML(html: string, allowScripts = false) {
             }
 
             if(isClosingTag) {
-                if(lastTag === tag.type && tag !== FRAGMENT) {
+                if(lastTag === tag.type && tag !== template) {
                     tag = tag.parent;
                     lastTag = tag.type;
                 }
@@ -450,5 +450,5 @@ export function parseHTML(html: string, allowScripts = false) {
         throw new Error(`Unexpected \`${q}\`.`);
     }
 
-    return FRAGMENT;
+    return template;
 }

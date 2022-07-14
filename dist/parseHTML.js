@@ -28,15 +28,15 @@ var NODE_TYPE = {
 var isWhiteSpace = function (v) { return WHITE_SPACE_RGX.test(v); };
 var isSelfClosingTag = function (v) { return SELF_CLOSING_TAGS_RGX.test(v); };
 var isSvgTag = function (v) { return SVG_TAGS_RGX.test(v); };
-var createTag = function (type, parent, attributes, isSvg) {
+var createTag = function (type, parent, props, isSvg) {
     if (parent === void 0) { parent = null; }
-    if (attributes === void 0) { attributes = {}; }
+    if (props === void 0) { props = {}; }
     if (isSvg === void 0) { isSvg = false; }
     return {
         type: type,
         isSvg: isSvg,
         parent: parent,
-        attributes: attributes,
+        props: props,
         children: []
     };
 };
@@ -49,12 +49,7 @@ var createText = function (value) {
 var createDocFrag = function (parent, isSvg) {
     if (parent === void 0) { parent = null; }
     if (isSvg === void 0) { isSvg = false; }
-    return {
-        type: NODE_TYPE.DOCUMENT_FRAGMENT,
-        children: [],
-        parent: parent,
-        isSvg: isSvg
-    };
+    return createTag(NODE_TYPE.DOCUMENT_FRAGMENT, parent, null, isSvg);
 };
 var createInteroplation = function (value) {
     return {
@@ -125,8 +120,8 @@ var parseAttributes = function (str) {
 function parseHTML(html, allowScripts) {
     if (allowScripts === void 0) { allowScripts = false; }
     var chars = html.split('');
-    var FRAGMENT = createDocFrag();
-    var tag = FRAGMENT;
+    var template = createTag('template', null, {}, false);
+    var tag = template;
     var i = 0;
     var type = '', text = '', attributeString = '', isClosingTag = false, tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', commentOpen = false, strOpen = false, escapeSequence = false, isPlainText = false, lastTag = '', tagStrOpen = '', jsSingleLineCommment = false, jsMultiLineComment = false, jsStrOpen = false;
     while (i < chars.length) {
@@ -297,7 +292,7 @@ function parseHTML(html, allowScripts) {
                 text = '';
             }
             if (isClosingTag) {
-                if (lastTag === tag.type && tag !== FRAGMENT) {
+                if (lastTag === tag.type && tag !== template) {
                     tag = tag.parent;
                     lastTag = tag.type;
                 }
@@ -379,6 +374,6 @@ function parseHTML(html, allowScripts) {
     if (strOpen) {
         throw new Error("Unexpected `".concat(q, "`."));
     }
-    return FRAGMENT;
+    return template;
 }
 exports.parseHTML = parseHTML;
