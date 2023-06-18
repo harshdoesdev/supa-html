@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseHTML = void 0;
 var SELF_CLOSING_TAGS_RGX = /^(br|img|input|source|wbr|hr|col|area|embed|track)$/;
 var SVG_TAGS_RGX = /^(animate|animateMotion|animateTransform|circle|clipPath|defs|desc|discard|ellipse|feBlend|feColorMatrix|feComponentTransfer|feComposite|feConvolveMatrix|feDiffuseLighting|feDisplacementMap|feDistantLight|feDropShadow|feFlood|feFuncA|feFuncB|feFuncG|feFuncR|feGaussianBlur|feImage|feMerge|feMergeNode|feMorphology|feOffset|fePointLight|feSpecularLighting|feSpotLight|feTile|feTurbulence|filter|foreignObject|g|image|line|linearGradient|marker|mask|metadata|mpath|path|pattern|polygon|polyline|radialGradient|rect|set|stop|svg|switch|symbol|text|textPath|tspan|unknown|use|view)$/;
 var PLAIN_TEXT_TAGS_RGX = /^(textarea|style|script)$/;
@@ -117,7 +114,7 @@ var parseAttributes = function (str) {
     }
     return attributes;
 };
-function parseHTML(html, allowScripts) {
+export function parseHTML(html, allowScripts) {
     if (allowScripts === void 0) { allowScripts = false; }
     var chars = html.split('');
     var frag = createDocFrag();
@@ -376,4 +373,3 @@ function parseHTML(html, allowScripts) {
     }
     return frag;
 }
-exports.parseHTML = parseHTML;

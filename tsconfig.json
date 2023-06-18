@@ -6,6 +6,7 @@
         "allowSyntheticDefaultImports": true,
         "allowJs": false,
         "target": "ES5",
-        "module": "CommonJS"
+        "module": "es2020",
+        "moduleResolution": "node",
     }
 }
