@@ -120,8 +120,8 @@ var parseAttributes = function (str) {
 function parseHTML(html, allowScripts) {
     if (allowScripts === void 0) { allowScripts = false; }
     var chars = html.split('');
-    var template = createTag('template', null, {}, false);
-    var tag = template;
+    var frag = createDocFrag();
+    var tag = frag;
     var i = 0;
     var type = '', text = '', attributeString = '', isClosingTag = false, tagNameOpen = false, hasAttributes = false, tagOpen = true, q = '', commentOpen = false, strOpen = false, escapeSequence = false, isPlainText = false, lastTag = '', tagStrOpen = '', jsSingleLineCommment = false, jsMultiLineComment = false, jsStrOpen = false;
     while (i < chars.length) {
@@ -292,7 +292,7 @@ function parseHTML(html, allowScripts) {
                 text = '';
             }
             if (isClosingTag) {
-                if (lastTag === tag.type && tag !== template) {
+                if (lastTag === tag.type && tag !== frag) {
                     tag = tag.parent;
                     lastTag = tag.type;
                 }
@@ -374,6 +374,6 @@ function parseHTML(html, allowScripts) {
     if (strOpen) {
         throw new Error("Unexpected `".concat(q, "`."));
     }
-    return template;
+    return frag;
 }
 exports.parseHTML = parseHTML;

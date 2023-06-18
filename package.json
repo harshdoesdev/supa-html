@@ -3,10 +3,12 @@
   "version": "0.0.3",
   "description": "Supercharged HTML Parser",
   "main": "dist/parseHTML.js",
+  "type": "module",
   "files": [
     "dist"
   ],
   "scripts": {
+    "test": "jest",
     "clean": "tsc --build --clean",
     "build": "tsc --build"
   },
@@ -23,5 +25,8 @@
   "bugs": {
     "url": "https://github.com/rare-earth/supa-html/issues"
   },
-  "homepage": "https://github.com/rare-earth/supa-html#readme"
+  "homepage": "https://github.com/rare-earth/supa-html#readme",
+  "dependencies": {
+    "typescript": "^5.1.3"
+  }
 }

@@ -142,9 +142,9 @@ const parseAttributes = (str: string) => {
 export function parseHTML(html: string, allowScripts = false) {
     const chars = html.split('');
 
-    const template = createTag('template', null, {}, false);
+    const frag = createDocFrag();
 
-    let tag = template;
+    let tag = frag;
 
     let i = 0;
 
@@ -354,7 +354,7 @@ export function parseHTML(html: string, allowScripts = false) {
             }
 
             if(isClosingTag) {
-                if(lastTag === tag.type && tag !== template) {
+                if(lastTag === tag.type && tag !== frag) {
                     tag = tag.parent;
                     lastTag = tag.type;
                 }
@@ -450,5 +450,5 @@ export function parseHTML(html: string, allowScripts = false) {
         throw new Error(`Unexpected \`${q}\`.`);
     }
 
-    return template;
+    return frag;
 }
