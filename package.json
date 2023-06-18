@@ -1,6 +1,6 @@
 {
   "name": "supa-html",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Supercharged HTML Parser",
   "main": "dist/parseHTML.js",
   "type": "module",
